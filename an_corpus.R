@@ -40,58 +40,39 @@ print(corp_MR)
 
 corpus_MR <- split_segments(corp_MR, segment_size = 40)
 
+# Definir os lexemas a serem removidos
+custom_stopwords <- c("$", "â", "¯", "95", "g", "=", "m3", "ci", "±", "3", "mâˆ",
+                      "m", "pm10", "gâ", "€", "rr", "mu")
+
+# Adicionar os lexemas à lista de stopwords em inglês
+extended_stopwords <- c(stopwords("en"), custom_stopwords)
+
 tok <- tokens(corpus_MR, remove_punct = TRUE)
-tok <- tokens_remove(tok, stopwords("en"))
+tok <- tokens_remove(tok, extended_stopwords)
 dtm <- dfm(tok, tolower = TRUE)
 dtm <- dfm_trim(dtm, min_docfreq = 10)
 
 res <- rainette(dtm, k =4, min_segment_size = 15)
 
-rainette_explor(res, dtm, corpus_MR)
+# rainette_explor(res, dtm, corpus_MR)
 
 rainette_plot(res, dtm, k = 4)
 
 docvars(corpus_MR)$cluster <- cutree(res, k = 4)
 
+groups <- cutree_rainette(res, k = 4)
+rs <- rainette_stats(groups, dtm)
+
 # Validação utilizando dois clusters
 res1 <- rainette(dtm, k = 4, min_segment_size = 12)
 res2 <- rainette(dtm, k = 4, min_segment_size = 15)
-res <- rainette2(res1, res2, max_k = 4)
+res1_2 <- rainette2(res1, res2, max_k = 4)
 
-rainette2_explor(res, dtm, corpus_MR)
+# rainette2_explor(res1_2, dtm, corpus_MR)
 
 
 
-# ------------------------------------------------------------------------------
 
-# Extrair apenas a segunda coluna do dataframe bib_abstract
-text_data <- bib_abstract[, 2]
 
-# Criar um corpus
-corpus <- Corpus(VectorSource(text_data))
-
-# Limpar e processar o texto
-corpus_clean <- tm_map(corpus, content_transformer(tolower))
-corpus_clean <- tm_map(corpus_clean, removePunctuation)
-corpus_clean <- tm_map(corpus_clean, stripWhitespace)
-corpus_clean <- tm_map(corpus_clean, removeWords, stopwords("english"))
-
-# Lematizar o texto
-corpus_lemma <- tm_map(corpus_clean, stemDocument)
-
-# Criar uma matriz de termos e documentos
-tdm <- TermDocumentMatrix(corpus_lemma)
-tdm <- as.matrix(tdm)
-
-chd_results <- HCPC(tdm, graph = FALSE)
-
-# -----------------------------------------------------------------------------
-
-# Criar uma tabela de contingência dos lexemas
-contingency_table <- tdm %*% t(tdm)
-
-afc_results <- CA(contingency_table, graph = FALSE)
-print(afc_results)
-plot(afc_results)
 
 
